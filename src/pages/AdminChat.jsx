@@ -1,10 +1,13 @@
 // AdminChat.jsx
 import React, { useEffect, useState } from "react";
-import { adminReply, getAllConversation, getConversation, makeAdminActive } from "../api/api";
+import {
+  adminReply,
+  getAllConversation,
+  getConversation,
+  makeAdminActive,
+} from "../api/api";
 import ChatBox from "../component/ChatBox";
 import socket from "../socket";
-
-
 
 // const sessionId = "256da8449cc9e4a0e8720ecb70a886fd"; // Should be dynamic in production
 
@@ -15,25 +18,24 @@ const AdminChat = () => {
   const [sessionId, setSessionId] = useState("");
   const [isActive, setIsActive] = useState(false);
 
-const handleToggle = async () => {
-  const data = {
-    adminId: "687b5069f064139f955063c2",
-    isOnline: !isActive,
-  };
+  const handleToggle = async () => {
+    const data = {
+      adminId: "687b5069f064139f955063c2",
+      isOnline: !isActive,
+    };
 
-  try {
-    const res = await makeAdminActive(data);
-    if (res.status === 200 && res.data.message === "Admin status updated") {
-      setIsActive(!isActive);
-      console.log("Status updated successfully:", res.data.message);
-    } else {
-      console.warn("Unexpected response:", res);
+    try {
+      const res = await makeAdminActive(data);
+      if (res.status === 200 && res.data.message === "Admin status updated") {
+        setIsActive(!isActive);
+        console.log("Status updated successfully:", res.data.message);
+      } else {
+        console.warn("Unexpected response:", res);
+      }
+    } catch (err) {
+      console.error("Error updating admin status:", err);
     }
-  } catch (err) {
-    console.error("Error updating admin status:", err);
-  }
-};
-
+  };
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -47,12 +49,27 @@ const handleToggle = async () => {
 
     fetchConversations();
   }, []);
-  console.log("get all conversation",conversations);
-    const handleSelectSession = (sessionId) => {
-      setSessionId(sessionId);
-      console.log("Selected Session ID:", sessionId);
-      // You can now fetch messages or update UI
-    };
+  console.log("get all conversation", conversations);
+  const handleSelectSession = async (sessionId) => {
+    if (isActive) {
+      try {
+        const data = {
+          adminId: "687b5069f064139f955063c2",
+          isOnline: false,
+        };
+        const res = await makeAdminActive(data);
+        if (res.status === 200 && res.data.message === "Admin status updated") {
+          setIsActive(false);
+          console.log("Admin set to offline before switching session");
+        }
+      } catch (err) {
+        console.error("Failed to set admin offline:", err);
+      }
+    }
+    setSessionId(sessionId);
+    console.log("Selected Session ID:", sessionId);
+    // You can now fetch messages or update UI
+  };
 
   // Handle admin reply
   const handleSend = async () => {
@@ -66,10 +83,10 @@ const handleToggle = async () => {
       };
 
       // Send message to backend (no need to store response)
-     await adminReply({
-       sessionId,
-       message: adminMsg,
-     });
+      await adminReply({
+        sessionId,
+        message: adminMsg,
+      });
 
       // Update chat UI
       setMessages((prev) => [...prev, adminMsg]);
@@ -89,7 +106,6 @@ const handleToggle = async () => {
   // Fetch initial conversation and set up socket listener
   useEffect(() => {
     // Load existing conversation
-     setIsActive(false);
     getConversation(sessionId).then((res) => {
       if (res.data.conversation) {
         setMessages(res.data.conversation.messages);
@@ -98,7 +114,7 @@ const handleToggle = async () => {
 
     // Listen for messages from the user
     socket.on("user-message", (data) => {
-        console.log("Received in admin:", data);
+      console.log("Received in admin:", data);
       if (data.sessionId === sessionId) {
         setMessages((prev) => [
           ...prev,
@@ -110,10 +126,7 @@ const handleToggle = async () => {
       console.log("Received in bot:", data);
       console.log("Received in bot:", data.message);
       if (data.sessionId === sessionId) {
-        setMessages((prev) => [
-          ...prev,
-          { sender: "bot", text: data.message },
-        ]);
+        setMessages((prev) => [...prev, { sender: "bot", text: data.message }]);
       }
     });
     // Join socket room for session
@@ -168,7 +181,7 @@ const handleToggle = async () => {
 
           <div className=" border border-gray-300 rounded-lg">
             {/* Chat UI */}
-            <ChatBox messages={messages} />
+            <ChatBox messages={messages} currentUser="admin" />
 
             {/* Input */}
             <div

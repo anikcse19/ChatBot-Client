@@ -63,7 +63,7 @@ const UserChat = () => {
       <div className="w-[600px]">
         <h2 className=" text-2xl font-bold  pb-5">User Chat</h2>
         <div className=" border border-gray-300 rounded-lg">
-          <ChatBox messages={messages} />
+          <ChatBox messages={messages} currentUser="user" />
           <div
             className=" border"
             style={{ marginTop: "1rem", display: "flex" }}

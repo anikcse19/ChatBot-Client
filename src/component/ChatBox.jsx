@@ -1,7 +1,6 @@
 import React from "react";
 
-const ChatBox = ({ messages }) => {
-  console.log("messeage = ",messages)
+const ChatBox = ({ messages, currentUser }) => {
   return (
     <div
       style={{
@@ -12,11 +11,34 @@ const ChatBox = ({ messages }) => {
         borderRadius: "8px",
       }}
     >
-      {messages.map((msg, i) => (
-        <div key={i} style={{ marginBottom: "0.5rem" }}>
-          <strong>{msg.sender}: </strong> {msg.text}
-        </div>
-      ))}
+      {messages.map((msg, i) => {
+        const isOwnMessage =
+          currentUser === "user"
+            ? msg.sender === "user"
+            : msg.sender === "admin" || msg.sender === "bot";
+
+        return (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              justifyContent: isOwnMessage ? "flex-end" : "flex-start",
+              marginBottom: "0.5rem",
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: isOwnMessage ? "#e0f7fa" : "#dcedc8",
+                padding: "8px 12px",
+                borderRadius: "16px",
+                maxWidth: "70%",
+              }}
+            >
+              <strong>{msg.sender}</strong>: {msg.text}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
