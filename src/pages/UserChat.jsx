@@ -1,16 +1,9 @@
 // UserChat.jsx
 import React, { useEffect, useState } from "react";
-import {  getConversation, getSingleUser, sendMessage } from "../api/api";
+import { getConversation, getSingleUser, sendMessage } from "../api/api";
 import socket from "../socket";
 import ChatBox from "../component/ChatBox";
 import { useParams } from "react-router";
-
-
-// const sessionId = "256da8449cc9e4a0e8720ecb70a886fd"; // This should be dynamic
-// const userId = "687b4d13f064139f95506362";
-
-// const sessionId = "0614d0e3548f367e54af11dba5ac3b49"; // This should be dynamic
-// const userId = "687b4c8bf064139f95506356";
 const UserChat = () => {
   const { id } = useParams();
   console.log(" id =", id);
@@ -18,6 +11,7 @@ const UserChat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [sessionId, setSessionId] = useState([]);
+  // const [adminActive, setAdminActive] = useState(false);
   console.log("sessionId=", sessionId);
   useEffect(() => {
     // Load existing conversation
@@ -32,7 +26,10 @@ const UserChat = () => {
 
     const res = await sendMessage({ sessionId, userId, message });
     setMessages((prev) => [...prev, { sender: "user", text: message }]);
-
+    //       if (res.data.status === "waiting_for_admin") {
+    //       setAdminActive(true)
+    //       }
+    // console.log(" user resonse data ",res.data)
     if (res.data.status === "bot_replied") {
       setMessages((prev) => [...prev, { sender: "bot", text: res.data.reply }]);
     }
@@ -41,21 +38,35 @@ const UserChat = () => {
   };
 
   useEffect(() => {
+    if (!sessionId) return;
     getConversation(sessionId).then((res) => {
       if (res.data.conversation) {
         setMessages(res.data.conversation.messages);
+   
       }
     });
-    console.log(" from user ");
-    socket.on("admin-reply", (data) => {
-      console.log("admin reply =", data);
-      if (data.sessionId === sessionId) {
-        setMessages((prev) => [...prev, { sender: "admin", text: data.text }]);
-      }
-    });
-    socket.emit("join", sessionId);
 
-    return () => socket.off("admin-reply");
+    socket.emit("join", sessionId);
+    socket.on("admin-reply", (data) => {
+      if (data.sessionId === sessionId) {
+     
+          setMessages((prev) => [
+            ...prev,
+            { sender: "admin", text: data.text },
+          ]);
+        }
+      
+    });
+    // 👇 Add the "admin-status" listener here
+    socket.on("admin-status", (data) => {
+      console.log("Admin status changed:", data.message);
+      // Optional: Show a message in chat or toast
+      setMessages((prev) => [...prev, { type: "status", text: data.message }]);
+    
+    });
+    return () => {
+      socket.off("admin-reply"), socket.off("admin-status");
+    };
   }, [sessionId]);
 
   return (
@@ -63,7 +74,12 @@ const UserChat = () => {
       <div className="w-[600px]">
         <h2 className=" text-2xl font-bold  pb-5">User Chat</h2>
         <div className=" border border-gray-300 rounded-lg">
-          <ChatBox messages={messages} currentUser="user" />
+          <ChatBox
+            messages={messages}
+            // isAdminOnline={adminActive}
+            currentUser="user"
+          />
+
           <div
             className=" border"
             style={{ marginTop: "1rem", display: "flex" }}
@@ -82,13 +98,6 @@ const UserChat = () => {
               Send
             </button>
           </div>
-          {/* <input
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            style={{ width: "80%", marginTop: "1rem" }}
-            placeholder="Type a message..."
-          />
-          <button onClick={handleSend}>Send</button> */}
         </div>
       </div>
     </div>

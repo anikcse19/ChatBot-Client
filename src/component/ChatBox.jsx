@@ -1,5 +1,3 @@
-import React from "react";
-
 const ChatBox = ({ messages, currentUser }) => {
   return (
     <div
@@ -9,9 +7,29 @@ const ChatBox = ({ messages, currentUser }) => {
         padding: "1rem",
         border: "1px solid #ccc",
         borderRadius: "8px",
+        position: "relative",
       }}
     >
       {messages.map((msg, i) => {
+        const isStatusMessage =
+          msg.text === "Admin is online" || msg.text === "Admin is offline";
+
+        if (isStatusMessage) {
+          return (
+            <div
+              key={`status-${i}`}
+              style={{
+                textAlign: "center",
+                margin: "10px 0",
+                fontWeight: "medium",
+                color: msg.text === "Admin is online" ? "green" : "red",
+              }}
+            >
+              {msg.text}
+            </div>
+          );
+        }
+
         const isOwnMessage =
           currentUser === "user"
             ? msg.sender === "user"
@@ -24,6 +42,8 @@ const ChatBox = ({ messages, currentUser }) => {
               display: "flex",
               justifyContent: isOwnMessage ? "flex-end" : "flex-start",
               marginBottom: "0.5rem",
+              position: "relative",
+              zIndex: 0,
             }}
           >
             <div

@@ -10,3 +10,4 @@ export const makeAdminActive = (data) => API.put("/admin/activity",data);
 export const getConversation = (sessionId) =>
   API.get(`/conversation/singleConversation/${sessionId}`);
 export const getAllConversation = () => API.get(`/conversation/get-allConversation`);
+export const getAdminStatus = (adminId) => API.get(`/admin/status/${adminId}`);
